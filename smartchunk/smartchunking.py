@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 from unidecode import unidecode
 
-class SmartChunker:
+class Chunker:
     
     def __init__(self, file_path):
         self.file_obj = fitz.open(file_path)

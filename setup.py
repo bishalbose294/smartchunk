@@ -19,7 +19,7 @@ setup(
     author_email="bishalbose294@gmail.com",
     description=DESCRIPTION,
     long_description_content_type="text/markdown",
-    long_description=LONG_DESCRIPTION,
+    long_description=long_description,
     packages=find_packages(),
     install_requires=['PyMuPDF', 'numpy', 'pandas', 'Unidecode'],
     keywords=['python', 'llm', 'pdf', 'text chunking', 'semantic chunking', 'chunks'],

@@ -1,0 +1,1 @@
+from smartchunk.smartchunking import Chunker
