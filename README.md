@@ -9,9 +9,9 @@ Developed by Bishal Bose, May 2024
 Creating A Server
 
 ```python
-from smart_chunking import SmartChunker
+from smartchunk.smartchunking import Chunker
 
-ext = Extractor("Your PDF filepath here.")
+ext = Chunker("Your PDF filepath here.")
 ext.run() ## returns the dataframe with extracted headers & section text
 
 ```
