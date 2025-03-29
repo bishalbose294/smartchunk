@@ -6,8 +6,7 @@ from unidecode import unidecode
 
 class Chunker:
     
-    def __init__(self, file_path):
-        self.file_obj = fitz.open(file_path)
+    def __init__(self,):
         pass
 
     def __getPages(self,):
@@ -50,6 +49,7 @@ class Chunker:
                                 rows.append((xmin, ymin, xmax, ymax, text, is_upper, is_bold, span_font, font_size, pagenum))
 
         span_df = pd.DataFrame(rows, columns=['xmin','ymin','xmax','ymax', 'text', 'is_upper','is_bold','span_font', 'font_size', 'page_num'])
+
 
         span_scores = []
         special = '[(_:/,#%\=@)]'
@@ -100,25 +100,30 @@ class Chunker:
         headings_list = []
         text_list = []
         tmp = []
+        pg_list = []
         heading = ''
         pagenum_list = []
 
         for index, span_row in span_df.iterrows():
             text = span_row.text
             tag = span_row.tag
-            pagenum_list.append(span_row.page_num)
+            page = span_row.page_num
 
             if 'h' in tag:
                 headings_list.append(text)
                 text_list.append('\n'.join(tmp))
+                pagenum_list.append(sorted(list(set(pg_list))))
                 tmp = []
+                pg_list = []
                 heading = text
             else:
                 tmp.append(text)
+                pg_list.append(page)
 
         text_list.append('\n'.join(tmp))
         text_list = text_list[1:]
-        text_df = pd.DataFrame(zip(headings_list, text_list, pagenum_list), columns=['Headers','Contents', 'PageNo'])
+        text_df = pd.DataFrame(zip(headings_list, text_list), columns=['Headers','Contents'])
+        text_df['PageNo'] = pagenum_list
         return text_df
     
     def __merge_header_content(self, df):
@@ -127,32 +132,64 @@ class Chunker:
 
         headerCon = ''
         contentCon = ''
-        data = {}
+        pageNumCon = list()
+        finalPg = []
+        data = []
         for index in range(len(df)):
             header = df.iloc[index]['Headers']
             content = df.iloc[index]['Contents']
+            pageNum = df.iloc[index]['PageNo']
+            # print(pageNum)
             
             if header:
                 headerCon += " "+header.strip()
                 headerCon = re.sub('[^a-zA-Z0-9  \'\.]', ' ', headerCon)
                 headerCon = re.sub(' +', ' ', headerCon)
+                
             if content:
                 contentCon += " "+content.strip()
                 contentCon = re.sub('[^a-zA-Z0-9 \'\.]', ' ', contentCon)
                 contentCon = re.sub(' +', ' ', contentCon)
             
+            if pageNum:
+                pageNumCon.extend(pageNum)
+                # print(pageNumCon)
+
             if header and content:
-                data[headerCon.strip()] = contentCon.strip()
+                # data[headerCon.strip()] = contentCon.strip()
+                data.append([headerCon.strip(), contentCon.strip()])
+                print("pageNumCon>>>>>>>>>>",pageNumCon)
+                tmp = sorted(list(set(pageNumCon)))
+                print("tmp>>>>>>>>>> ",tmp)
+                tmp = ', '.join(str(x) for x in tmp)
+                # finalPg.append(', '.join(str(x) for x in tmp))
+                # print(type(tmp))
+                finalPg.append(tmp)
+                if len(data) != len(finalPg):
+                    print("len(data) >>>>>>>>> ",str(len(data)))
+                    print("len(finalPg) >>>>>>>>> ",str(len(finalPg)))
+                    break
+                
                 headerCon = ''
                 contentCon = ''
+                pageNumCon = list()
 
-        formatted_pd = pd.DataFrame(data.items(), columns=['Headers','Contents'])
-
+        formatted_pd = pd.DataFrame(data, columns=['Headers','Contents'])
+        formatted_pd['PageNo'] = finalPg
+        
         return formatted_pd
 
-    def run(self, ):
+    def run(self, file_path):
+        self.file_obj = fitz.open(file_path)
         page_dict = self.__getPages()
         df = self.__extractText(page_dict)
         df = self.__merge_header_content(df)
         self.file_obj.close()
         return df
+
+if __name__ == "__main__":
+    filePath = "D:/Downloads/HR Policy Manual 2023 (8).pdf"
+    chunk = Chunker()
+    df = chunk.run(filePath)
+    df.to_csv("D:/Downloads/HR Policy Manual 2023 (8)2.csv", index=False)
+    pass
